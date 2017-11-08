@@ -1,22 +1,30 @@
 CREATE TABLE storage (drug_name VARCHAR(14) PRIMARY KEY, cost_per_unit NUMBER(3,2) NOT NULL);
 CREATE TABLE drug_types (drug_name VARCHAR(14) FOREIGN KEY, drug_type VARCHAR(10) NOT NULL);
-CREATE TABLE orders (order_id INTEGER NOT NULL, client_name VARCHAR(10), drug_name VARCHAR(14) FOREIGN KEY, quantity INTEGER, order_date DATE DEFAULT SYSDATE);
+CREATE TABLE orders (order_id INTEGER PRIMARY KEY, client_name VARCHAR(10), order_date DATE DEFAULT SYSDATE);
+CREATE TABLE order_items (order_id INTEGER FOREIGN KEY, drug_name VARCHAR(14) FOREIGN KEY, quantity INTEGER);
 
-CREATE VIEW orders_number_for_dona_in_august AS (SELECT count(client_name) FROM orders WHERE client_name = 'dona' AND order_date BETWEEN '01-AUG-2017' AND '31-AUG-2017');
+CREATE VIEW total_no_of_orders_for_dona_in_august AS (SELECT count(client_name) FROM orders WHERE client_name = 'dona' AND order_date BETWEEN '01-AUG-2017' AND
+'31-AUG-2017');
 
-CREATE VIEW orders_cost_for_dona_in_august AS (SELECT orders.quantity * storage.cost_per_unit FROM storage, orders WHERE storage.drug_name = orders.drug_name AND orders.client_name = 'dona' AND orders.order_date BETWEEN '01-AUG-2017' AND '31-AUG-2017');
+CREATE VIEW orders_cost_for_dona_in_august AS (SELECT order_items.quantity * storage.cost_per_unit FROM storage, orders, order_id WHERE storage.drug_name =
+order_items.drug_name AND orders.client_name = 'dona' AND orders.order_id = order_items.order_id AND orders.order_date BETWEEN '01-AUG-2017' AND '31-AUG-2017');
 
-CREATE VIEW orders_average_for_dona_in_august AS (SELECT AVG(orders.quantity * storage.cost_per_unit) FROM storage, orders WHERE storage.drug_name = orders.drug_name AND orders.client_name = 'dona' AND orders.order_date BETWEEN '01-AUG-2017' AND '31-AUG-2017' GROUP BY orders.order_id);
+CREATE VIEW orders_average_cost_for_dona_in_august AS (SELECT AVG(orders.quantity * storage.cost_per_unit) FROM storage, orders, order_id WHERE storage.drug_name =
+order_items.drug_name AND orders.client_name = 'dona' AND orders.order_id = order_items.order_id AND orders.order_date BETWEEN '01-AUG-2017' AND '31-AUG-2017'
+GROUP BY orders.order_id);
 
-CREATE VIEW antibiotics_orders_number_for_dona_in_2016 AS (SELECT count(orders.client_name) FROM orders, drug_types WHERE orders.drug_name = drug_types AND drug_types.drug_type = 'antibiotic' AND orders.order_date LIKE '%2016');
+CREATE VIEW antibiotics_orders_number_for_vlad_in_2016 AS (SELECT count(orders.client_name) FROM orders, order_items, drug_types WHERE orders.drug_name =
+drug_types.drug_name AND orders.order_id = order_items.order_id AND orders.client_name = 'vlad' AND drug_types.drug_type = 'antibiotic' AND orders.order_date LIKE
+'%2016');
 
-CREATE VIEW client_with_maximum_order_in_2016 AS (SELECT SUM(depozit.cost_per_unit) FROM storage, orders WHERE storage.drug_name = orders.drug_name AND orders.order_date LIKE '%2016' GROUP BY orders.client_name HAVING MAX(SUM(storage.cost_per_unit)));
+CREATE VIEW client_with_maximum_no_of_orders_in_2016 AS (SELECT SUM(order_id) FROM orders, order_items WHERE orders.order_id = order_items.order_id AND
+orders.order_date LIKE '%2016' GROUP BY orders.client_name HAVING MAX(SUM(order_id)));
 
-CRREATE VIEW quantity_ordererd_by_products AS (SELECT client_name, drug_name, SUM(drug_name) FROM orders FROM GROUP BY client_name, drug_name);
+CREATE VIEW quantity_ordererd_by_products AS (SELECT client_name, drug_name, SUM(drug_name) FROM orders FROM GROUP BY client_name, drug_name);
 
-SELECT * FROM orders_number_for_dona_in_august;
+SELECT * FROM total_no_of_orders_for_dona_in_august;
 SELECT * FROM orders_cost_for_dona_in_august;
-SELECT * FROM orders_average_for_dona_in_august;
-SELECT * FROM antibiotics_orders_number_for_dona_in_2016;
-SELECT * FROM client_with_maximum_order_in_2016;
+SELECT * FROM orders_average_cost_for_dona_in_august;
+SELECT * FROM antibiotics_orders_number_for_vlad_in_2016;
+SELECT * FROM client_with_maximum_no_of_orders_in_2016;
 SELECT * FROM quantity_ordererd_by_products;
